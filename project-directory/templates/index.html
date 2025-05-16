@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Распознавание цифр</title>
+    <style>
+        canvas {
+            border: 2px solid #444;
+            background-color: white;
+        }
+        body {
+            text-align: center;
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <h1>Рисуй цифру или загрузи картинку</h1>
+
+    <!-- Рисование -->
+    <canvas id="canvas" width="280" height="280"></canvas><br>
+    <button onclick="predictCanvas()">Распознать с канваса</button>
+    <button onclick="clearCanvas()">Очистить</button>
+
+    <hr>
+
+    <!-- Загрузка изображения -->
+    <input type="file" id="imageUpload" accept="image/*">
+    <button onclick="predictUpload()">Распознать загруженное изображение</button>
+
+    <h2 id="result"></h2>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        let drawing = false;
+        canvas.addEventListener('mousedown', () => drawing = true);
+        canvas.addEventListener('mouseup', () => drawing = false);
+        canvas.addEventListener('mousemove', draw);
+
+        function draw(e) {
+            if (!drawing) return;
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            ctx.arc(e.offsetX, e.offsetY, 10, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('result').textContent = '';
+        }
+
+        function predictCanvas() {
+            const dataURL = canvas.toDataURL('image/png');
+            fetch('/predict', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({image: dataURL})
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('result').textContent = `Распознано: ${data.prediction}`;
+            });
+        }
+
+        function predictUpload() {
+            const input = document.getElementById('imageUpload');
+            const file = input.files[0];
+            if (!file) return alert("Выберите файл");
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('result').textContent = `Распознано: ${data.prediction}`;
+            });
+        }
+    </script>
+</body>
+</html>
