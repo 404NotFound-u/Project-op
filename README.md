@@ -1,5 +1,5 @@
 # Project-op
 
 # Запуск
-'python app.py'
+```python app.py```
 
